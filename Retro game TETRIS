@@ -1,0 +1,120 @@
+import pygame
+import random
+
+# Initialize Pygame
+pygame.init()
+
+# Constants
+SCREEN_WIDTH, SCREEN_HEIGHT = 300, 600
+BLOCK_SIZE = 30
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+
+# Create the game screen
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Tetris")
+
+# Define the Tetris pieces (Tetriminos)
+tetriminos = [
+    [[1, 1, 1, 1]],
+    [[1, 1], [1, 1]],
+    [[1, 1, 1], [0, 1, 0]],
+    [[1, 1, 1], [1, 0, 0]],
+    [[1, 1, 1], [0, 0, 1]],
+    [[1, 1, 1], [0, 1, 0], [0, 1, 0]],
+    [[1, 1, 1], [1, 0, 1]]
+]
+
+# Define colors for Tetriminos
+tetrimino_colors = [
+    (255, 0, 0),  # Red
+    (0, 255, 0),  # Green
+    (0, 0, 255),  # Blue
+    (255, 255, 0),  # Yellow
+    (255, 165, 0),  # Orange
+    (128, 0, 128),  # Purple
+    (0, 255, 255)  # Cyan
+]
+
+# Create the Tetris board
+board = [[0] * (SCREEN_WIDTH // BLOCK_SIZE) for _ in range(SCREEN_HEIGHT // BLOCK_SIZE)]
+
+# Define functions for drawing the board and Tetriminos
+def draw_board():
+    for y, row in enumerate(board):
+        for x, color in enumerate(row):
+            if color:
+                pygame.draw.rect(screen, tetrimino_colors[color - 1], (x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
+
+def draw_tetrimino(tetrimino, position):
+    for y, row in enumerate(tetrimino):
+        for x, cell in enumerate(row):
+            if cell:
+                pygame.draw.rect(screen, tetrimino_colors[cell - 1], ((position[0] + x) * BLOCK_SIZE, (position[1] + y) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
+
+# Define function to check if a Tetrimino can be placed at a position
+def can_place_tetrimino(tetrimino, position):
+    for y, row in enumerate(tetrimino):
+        for x, cell in enumerate(row):
+            if cell:
+                if position[0] + x < 0 or position[0] + x >= len(board[0]) or position[1] + y >= len(board) or board[position[1] + y][position[0] + x]:
+                    return False
+    return True
+
+# Define function to clear completed rows
+def clear_rows():
+    global board
+    rows_to_clear = []
+    for y, row in enumerate(board):
+        if all(row):
+            rows_to_clear.append(y)
+    for y in rows_to_clear:
+        del board[y]
+        board.insert(0, [0] * len(board[0]))
+
+# Game variables
+current_tetrimino = random.choice(tetriminos)
+current_tetrimino_color = random.randint(1, len(tetrimino_colors))
+current_position = [4, 0]
+score = 0
+
+# Game loop
+clock = pygame.time.Clock()
+game_over = False
+
+while not game_over:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            game_over = True
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT and can_place_tetrimino(current_tetrimino, [current_position[0] - 1, current_position[1]]):
+                current_position[0] -= 1
+            if event.key == pygame.K_RIGHT and can_place_tetrimino(current_tetrimino, [current_position[0] + 1, current_position[1]]):
+                current_position[0] += 1
+            if event.key == pygame.K_DOWN and can_place_tetrimino(current_tetrimino, [current_position[0], current_position[1] + 1]):
+                current_position[1] += 1
+
+    # Move Tetrimino down
+    if can_place_tetrimino(current_tetrimino, [current_position[0], current_position[1] + 1]):
+        current_position[1] += 1
+    else:
+        # Place Tetrimino on the board
+        for y, row in enumerate(current_tetrimino):
+            for x, cell in enumerate(row):
+                if cell:
+                    board[current_position[1] + y][current_position[0] + x] = current_tetrimino_color
+        clear_rows()
+        # Create a new Tetrimino
+        current_tetrimino = random.choice(tetriminos)
+        current_tetrimino_color = random.randint(1, len(tetrimino_colors))
+        current_position = [4, 0]
+
+    # Draw the game
+    screen.fill(WHITE)
+    draw_board()
+    draw_tetrimino(current_tetrimino, current_position)
+    pygame.display.update()
+    clock.tick(5)  # Adjust the speed of the game
+
+# Quit Pygame
+pygame.quit()
